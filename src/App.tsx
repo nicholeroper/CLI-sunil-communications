@@ -18,6 +18,25 @@ declare global {
   }
 }
 
+function PatchesListener() {
+  useEffect(() => {
+    const onPop = () => {
+      const patch = sessionStorage.getItem('gp-patches');
+      if (patch) {
+        sessionStorage.removeItem('gp-patches');
+        const { savedPath, savedHistory } = JSON.parse(patch);
+        if (savedPath === window.location.pathname + window.location.search) {
+          window.history.replaceState(null, '', savedPath);
+          window.history.go(savedHistory - window.history.length);
+        }
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  return null;
+}
+
 function PageTracker() {
   const location = useLocation();
   useEffect(() => {
@@ -31,8 +50,19 @@ function PageTracker() {
 }
 
 function App() {
+  useEffect(() => {
+    sessionStorage.setItem(
+      'gp-patches',
+      JSON.stringify({
+        savedPath: window.location.pathname + window.location.search,
+        savedHistory: window.history.length,
+      })
+    );
+  }, []);
+
   return (
     <Router>
+      <PatchesListener />
       <PageTracker />
       <ScrollToTop />
       <Layout>
